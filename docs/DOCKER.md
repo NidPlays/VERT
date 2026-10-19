@@ -5,6 +5,7 @@ This file covers how to run VERT under a Docker container.
 - [Quick start](#quick-start)
 - [Configuration](#configuration)
 - [Docker Compose (with vertd)](#docker-compose-with-vertd)
+- [Behind a reverse proxy](#behind-a-reverse-proxy)
 - [Manually building the image](#manually-building-the-image)
 - [Publishing images from a fork](#publishing-images-from-a-fork)
 
@@ -83,6 +84,88 @@ By default vertd encodes on the CPU. For hardware acceleration, uncomment **one*
 - **NVIDIA:** the `runtime` and `deploy` blocks. These need the [NVIDIA Container Toolkit](https://github.com/VERT-sh/vertd/blob/main/docs/DOCKER_SETUP.md#for-nvidia-users).
 
 Check `docker logs vertd` for a `detected a ... GPU` message. See the [vertd Docker docs](https://github.com/VERT-sh/vertd/blob/main/docs/DOCKER_SETUP.md) and [Video Conversion](./VIDEO_CONVERSION.md) for more details.
+
+### Behind a reverse proxy
+
+You can keep both containers off the public internet and serve vertd from the **same domain** as VERT under a path, e.g. `https://vert.example.com/vertd/`. Because everything is same-origin, no CORS setup is needed, and any authentication in front of VERT (like [oauth2-proxy](https://oauth2-proxy.github.io/oauth2-proxy/)) automatically covers vertd too: the session cookie is sent along with every upload, download and WebSocket.
+
+1. Only listen on loopback with a `docker-compose.override.yml` next to `docker-compose.yml` (Compose picks it up automatically, so the main file stays untouched):
+
+    ```yaml
+    services:
+        vert:
+            ports: !override
+                - 127.0.0.1:3000:80
+        vertd:
+            ports: !override
+                - 127.0.0.1:24153:24153
+    ```
+
+2. Point VERT at the proxied path in your `.env`:
+
+    ```shell
+    PUB_VERTD_URL=https://vert.example.com/vertd
+    ```
+
+3. Proxy both, e.g. with nginx and oauth2-proxy in [`auth_request` mode](https://oauth2-proxy.github.io/oauth2-proxy/configuration/integration#configuring-for-use-with-the-nginx-auth_request-directive) (run oauth2-proxy with `--http-address=127.0.0.1:4180 --reverse-proxy=true --upstream=static://202`):
+
+    ```nginx
+    map $http_upgrade $connection_upgrade {
+        default upgrade;
+        ""      close;
+    }
+
+    server {
+        listen 443 ssl;
+        server_name vert.example.com;
+        # ssl_certificate ...; ssl_certificate_key ...;
+
+        # nginx defaults to 1 MB; videos sent to vertd can be much larger
+        client_max_body_size 0;
+
+        location /oauth2/ {
+            proxy_pass http://127.0.0.1:4180;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Auth-Request-Redirect $request_uri;
+        }
+
+        location = /oauth2/auth {
+            internal;
+            proxy_pass http://127.0.0.1:4180;
+            proxy_set_header Host $host;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Content-Length "";
+            proxy_pass_request_body off;
+        }
+
+        location / {
+            auth_request /oauth2/auth;
+            error_page 401 =403 /oauth2/sign_in;
+            proxy_pass http://127.0.0.1:3000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /vertd/ {
+            auth_request /oauth2/auth;
+            # the trailing slash strips the /vertd prefix
+            proxy_pass http://127.0.0.1:24153/;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection $connection_upgrade;
+            proxy_set_header Host $host;
+            # stream uploads/downloads and keep the WebSocket open during long conversions
+            proxy_request_buffering off;
+            proxy_buffering off;
+            proxy_read_timeout 1h;
+            proxy_send_timeout 1h;
+        }
+    }
+    ```
+
+Unauthenticated requests to `/vertd/` get a plain `401` rather than a login redirect, so vertd is never reachable without a session. If a session expires while VERT is open, video conversions will fail until the page is reloaded and the user logs in again.
 
 ### Manually building the image
 
