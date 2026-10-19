@@ -16,7 +16,7 @@ docker run -d \
     --restart unless-stopped \
     -p 3000:80 \
     --name "vert" \
-    ghcr.io/vert-sh/vert:latest
+    ghcr.io/nidplays/vert:latest
 ```
 
 This will do the following:
@@ -49,7 +49,7 @@ With `docker run`, pass them with `-e`:
 docker run -d -p 3000:80 --name vert \
     -e PUB_VERTD_URL=https://vertd.example.com \
     -e PUB_DISABLE_FAILURE_BLOCKS=true \
-    ghcr.io/vert-sh/vert:latest
+    ghcr.io/nidplays/vert:latest
 ```
 
 With Docker Compose, put them in a `.env` file next to `docker-compose.yml` (see [`.env.example`](/.env.example)) and run `docker compose up -d` again.
@@ -63,13 +63,13 @@ The [`docker-compose.yml`](/docker-compose.yml) file runs VERT together with its
 
 Settings go in a `.env` file next to `docker-compose.yml`. Besides the `PUB_*` variables above, it understands:
 
-| Variable             | Default                        | Description                                                           |
-| -------------------- | ------------------------------ | --------------------------------------------------------------------- |
-| `VERT_IMAGE`         | `ghcr.io/vert-sh/vert:latest`  | VERT image to run, e.g. `ghcr.io/<your-user>/vert:latest` for a fork. |
-| `VERTD_IMAGE`        | `ghcr.io/vert-sh/vertd:latest` | vertd image to run.                                                   |
-| `PORT`               | `3000`                         | Host port for VERT.                                                   |
-| `VERTD_PORT`         | `24153`                        | Host port for vertd.                                                  |
-| `ALLOW_CPU_FALLBACK` | `true`                         | Let vertd use (slower) CPU encoding when no supported GPU is found.   |
+| Variable             | Default                        | Description                                                                          |
+| -------------------- | ------------------------------ | ------------------------------------------------------------------------------------ |
+| `VERT_IMAGE`         | `ghcr.io/nidplays/vert:latest` | VERT image to run, e.g. a specific version like `ghcr.io/nidplays/vert:sha-520427c`. |
+| `VERTD_IMAGE`        | `ghcr.io/vert-sh/vertd:latest` | vertd image to run.                                                                  |
+| `PORT`               | `3000`                         | Host port for VERT.                                                                  |
+| `VERTD_PORT`         | `24153`                        | Host port for vertd.                                                                 |
+| `ALLOW_CPU_FALLBACK` | `true`                         | Let vertd use (slower) CPU encoding when no supported GPU is found.                  |
 
 > [!IMPORTANT]
 > `PUB_VERTD_URL` (default `http://localhost:24153`) is used by your visitors' **browsers**, not by the VERT container. It works as-is when you open VERT on the machine running Docker; otherwise set it to something they can reach, like `http://192.168.1.10:24153` or a reverse-proxied `https://vertd.example.com` — not a Docker-internal hostname like `http://vertd:24153`. If you're serving VERT over HTTPS, vertd needs to be served over HTTPS as well.
@@ -172,14 +172,14 @@ Unauthenticated requests to `/vertd/` get a plain `401` rather than a login redi
 First, clone the repository:
 
 ```shell
-git clone https://github.com/VERT-sh/VERT
+git clone https://github.com/NidPlays/VERT
 cd VERT/
 ```
 
 Then build a Docker image with:
 
 ```shell
-docker build -t vert-sh/vert .
+docker build -t nidplays/vert .
 ```
 
 Any `PUB_*` variable can also be passed as a `--build-arg` to change the image's built-in defaults (they can still be overridden at runtime). Pass `--build-arg VERT_RUNTIME_ENV=false` if you want a fully static build that ignores runtime variables.
@@ -191,7 +191,7 @@ docker run -d \
     --restart unless-stopped \
     -p 3000:80 \
     --name "vert" \
-    vert-sh/vert
+    nidplays/vert
 ```
 
 With Docker Compose, use `docker compose up -d --build`.
@@ -204,5 +204,7 @@ The [Docker workflow](/.github/workflows/docker.yml) builds and pushes `ghcr.io/
 2. Push to `main` (published as `latest`), push a `v*` tag (published as e.g. `1.2.3` and `1.2`), or run the workflow manually from the Actions tab.
 3. New packages are private by default. Either make it public under your profile's **Packages** → package settings, or `docker login ghcr.io` on your server.
 4. Set `VERT_IMAGE=ghcr.io/<your-user>/vert:latest` in your `.env` and run `docker compose pull && docker compose up -d`.
+
+This fork publishes its image as `ghcr.io/nidplays/vert`, with tags `latest` (the `main` branch), `sha-<commit>` for every build, and `<version>` for `v*` tags.
 
 Since configuration happens at runtime, you don't need to change any build arguments in the workflow.
