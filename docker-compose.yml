@@ -1,8 +1,8 @@
 services:
     vert:
         container_name: vert
-        # set VERT_IMAGE to use your own build, e.g. ghcr.io/<your-user>/vert:latest
-        image: ${VERT_IMAGE:-ghcr.io/vert-sh/vert:latest}
+        # set VERT_IMAGE to use another build, e.g. ghcr.io/vert-sh/vert:latest for upstream VERT
+        image: ${VERT_IMAGE:-ghcr.io/nidplays/vert:latest}
         # only needed if you want to build the image yourself (`docker compose up --build`)
         build:
             context: .
