@@ -54,6 +54,19 @@ export const normalizeVertdUrl = (value: string): string => {
 	}
 };
 
+// true when this instance is configured with its own vertd server
+export const HAS_INSTANCE_VERTD =
+	!!PUB_VERTD_URL && PUB_VERTD_URL !== "https://vertd.vert.sh";
+
+export const isInstanceVertdUrl = (value: string): boolean => {
+	if (!HAS_INSTANCE_VERTD) return false;
+	try {
+		return normalizeVertdUrl(value) === normalizeVertdUrl(PUB_VERTD_URL);
+	} catch {
+		return false;
+	}
+};
+
 export class VertdInstance {
 	public static instance = new VertdInstance();
 
@@ -70,9 +83,7 @@ export class VertdInstance {
 
 		// if custom vertd url and no saved setting, default to the custom url
 		if (!ls) {
-			const isCustomUrl =
-				PUB_VERTD_URL && PUB_VERTD_URL !== "https://vertd.vert.sh";
-			if (isCustomUrl) {
+			if (HAS_INSTANCE_VERTD) {
 				this.inner = { type: "custom" };
 				return;
 			}

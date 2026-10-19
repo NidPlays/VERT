@@ -321,6 +321,7 @@
 				"info": "We host a public server for vertd for your convenience, but it is quite easy to host your own on your PC or server if you know what you are doing.",
 				"more": "[vertd_link]Learn more[/vertd_link]"
 			},
+			"instance_notice": "This VERT instance uses its own video conversion server, run by the operator of this instance rather than the official VERT team. Videos that need server-side conversion are processed there.",
 			"instance": {
 				"label": "Instance",
 				"url_placeholder": "Example: http://localhost:24153",
