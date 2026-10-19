@@ -9,7 +9,7 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
-	import { PUB_DONATION_URL, PUB_STRIPE_KEY } from "$env/static/public";
+	import { PUB_DONATION_URL, PUB_STRIPE_KEY } from "$lib/util/env";
 	// please do not change these!
 	const OFFICIAL_DONATION_URL = atob("aHR0cHM6Ly9kb25hdGlvbnMudmVydC5zaA==");
 	const OFFICIAL_STRIPE_KEY = atob(

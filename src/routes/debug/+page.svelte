@@ -23,7 +23,7 @@
 	import type { Component } from "svelte";
 	import { browser } from "$app/environment";
 	import { onMount } from "svelte";
-	import { PUB_ENV } from "$env/static/public";
+	import { PUB_ENV } from "$lib/util/env";
 	import { effects } from "$lib/store/index.svelte";
 	import { ToastManager } from "$lib/util/toast.svelte";
 	import { swManager, type CacheInfo } from "$lib/util/sw";

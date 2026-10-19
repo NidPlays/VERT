@@ -66,6 +66,10 @@ export default defineConfig(({ command }) => {
 		},
 		define: {
 			__COMMIT_HASH__: JSON.stringify(commitHash),
+			// allow PUB_* overrides at runtime (see src/lib/util/env.ts)
+			__RUNTIME_ENV__: JSON.stringify(
+				process.env.VERT_RUNTIME_ENV === "true",
+			),
 		},
 	};
 });
