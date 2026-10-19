@@ -11,6 +11,7 @@
 	import {
 		VertdInstance,
 		getVertdCustomHeaders,
+		isInstanceVertdUrl,
 		vertdSizeLimit,
 		type VertdInner,
 	} from "./vertdSettings.svelte";
@@ -21,6 +22,11 @@
 	let abortController: AbortController | null = null;
 
 	const { settings = $bindable() }: { settings: ISettings } = $props();
+
+	const usingInstanceVertd = $derived(
+		VertdInstance.instance.innerData().type === "custom" &&
+			isInstanceVertdUrl(settings.vertdURL),
+	);
 
 	$effect(() => {
 		if (abortController) abortController.abort();
@@ -88,6 +94,11 @@
 			<p class="text-sm text-muted font-normal">
 				{@html sanitize(m["settings.vertd.description.main"]())}
 			</p>
+			{#if usingInstanceVertd}
+				<p class="text-sm font-normal">
+					{m["settings.vertd.instance_notice"]()}
+				</p>
+			{/if}
 			<p class="text-sm text-muted font-normal">
 				{@html sanitize(
 					link(

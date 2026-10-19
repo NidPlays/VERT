@@ -2,15 +2,20 @@ FROM oven/bun AS builder
 
 WORKDIR /app
 
-ARG PUB_ENV
-ARG PUB_HOSTNAME
-ARG PUB_PLAUSIBLE_URL
-ARG PUB_VERTD_URL
-ARG PUB_DISABLE_ALL_EXTERNAL_REQUESTS
-ARG PUB_DONATION_URL
-ARG PUB_STRIPE_KEY
+# Build-time defaults. With VERT_RUNTIME_ENV=true (the default), any PUB_*
+# variable can still be overridden when the container starts, e.g.
+# `docker run -e PUB_VERTD_URL=https://vertd.example.com ...`
+ARG VERT_RUNTIME_ENV=true
+ARG PUB_ENV=production
+ARG PUB_HOSTNAME=
+ARG PUB_PLAUSIBLE_URL=
+ARG PUB_VERTD_URL=https://vertd.vert.sh
+ARG PUB_DISABLE_ALL_EXTERNAL_REQUESTS=false
+ARG PUB_DONATION_URL=https://donations.vert.sh
+ARG PUB_STRIPE_KEY=pk_live_51TlrPaFTPjkhEGBSu5Kwy5jJQYxcX5yUUHXiH5g7Xzvb0NKzDqbooc126HjlW35uUkfAgQN2ruEoCuyQynoxpKaA00ojFgQ116
 ARG PUB_DISABLE_FAILURE_BLOCKS=false
 
+ENV VERT_RUNTIME_ENV=${VERT_RUNTIME_ENV}
 ENV PUB_ENV=${PUB_ENV}
 ENV PUB_HOSTNAME=${PUB_HOSTNAME}
 ENV PUB_PLAUSIBLE_URL=${PUB_PLAUSIBLE_URL}
@@ -40,5 +45,7 @@ COPY ./nginx/default.conf /etc/nginx/conf.d/default.conf
 
 COPY --from=builder /app/build /usr/share/nginx/html
 
+COPY --chmod=755 ./docker/*.sh /docker-entrypoint.d/
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-	CMD curl --fail --silent --output /dev/null http://localhost || exit 1
+	CMD wget --quiet --spider http://localhost/ || exit 1

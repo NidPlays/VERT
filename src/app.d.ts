@@ -29,9 +29,11 @@ type EventOptions = {
 declare global {
 	interface Window {
 		plausible: TrackEvent;
+		__VERT_ENV__?: Record<string, string>;
 	}
 
 	const __COMMIT_HASH__: string;
+	const __RUNTIME_ENV__: boolean;
 }
 
 /**

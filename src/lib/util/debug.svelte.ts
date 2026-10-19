@@ -1,5 +1,5 @@
 import { browser } from "$app/environment";
-import { PUB_ENV } from "$env/static/public";
+import { PUB_ENV } from "$lib/util/env";
 import {
 	AudioLinesIcon,
 	BookTextIcon,

@@ -8,7 +8,7 @@ import {
 } from "$lib/sections/settings/vertdSettings.svelte";
 import { VertFile } from "$lib/types";
 import { Converter, FormatInfo } from "../converter.svelte";
-import { PUB_DISABLE_FAILURE_BLOCKS } from "$env/static/public";
+import { PUB_DISABLE_FAILURE_BLOCKS } from "$lib/util/env";
 import { ToastManager } from "$lib/util/toast.svelte";
 import type {
 	SettingDefinition,

@@ -1,18 +1,59 @@
 services:
     vert:
         container_name: vert
-        image: ghcr.io/vert-sh/vert:latest
+        # set VERT_IMAGE to use your own build, e.g. ghcr.io/<your-user>/vert:latest
+        image: ${VERT_IMAGE:-ghcr.io/vert-sh/vert:latest}
+        # only needed if you want to build the image yourself (`docker compose up --build`)
         build:
             context: .
-            args:
-                PUB_HOSTNAME: ${PUB_HOSTNAME:-localhost:5173}
-                PUB_PLAUSIBLE_URL: ${PUB_PLAUSIBLE_URL:-}
-                PUB_ENV: ${PUB_ENV:-production}
-                PUB_DISABLE_ALL_EXTERNAL_REQUESTS: ${PUB_DISABLE_ALL_EXTERNAL_REQUESTS:-false}
-                PUB_VERTD_URL: ${PUB_VERTD_URL:-https://vertd.vert.sh}
-                PUB_DONATION_URL: ${PUB_DONATION_URL:-https://donations.vert.sh}
-                PUB_STRIPE_KEY: ${PUB_STRIPE_KEY:-pk_live_51TlrPaFTPjkhEGBSu5Kwy5jJQYxcX5yUUHXiH5g7Xzvb0NKzDqbooc126HjlW35uUkfAgQN2ruEoCuyQynoxpKaA00ojFgQ116}
-                PUB_DISABLE_FAILURE_BLOCKS: ${PUB_DISABLE_FAILURE_BLOCKS:-false}
+        # read at container start, so changing these only needs a restart, not a rebuild.
+        # put overrides in a `.env` file next to this one (see .env.example)
+        environment:
+            PUB_ENV: ${PUB_ENV:-production}
+            PUB_HOSTNAME: ${PUB_HOSTNAME:-}
+            PUB_PLAUSIBLE_URL: ${PUB_PLAUSIBLE_URL:-}
+            # used by your visitors' browsers, so it must be reachable from them - use your
+            # server's LAN IP or a (reverse-proxied) domain when not only accessing VERT locally.
+            # set to https://vertd.vert.sh to use the official instance instead
+            PUB_VERTD_URL: ${PUB_VERTD_URL:-http://localhost:24153}
+            PUB_DISABLE_ALL_EXTERNAL_REQUESTS: ${PUB_DISABLE_ALL_EXTERNAL_REQUESTS:-false}
+            PUB_DISABLE_FAILURE_BLOCKS: ${PUB_DISABLE_FAILURE_BLOCKS:-false}
+            PUB_DONATION_URL: ${PUB_DONATION_URL:-https://donations.vert.sh}
+            PUB_STRIPE_KEY: ${PUB_STRIPE_KEY:-pk_live_51TlrPaFTPjkhEGBSu5Kwy5jJQYxcX5yUUHXiH5g7Xzvb0NKzDqbooc126HjlW35uUkfAgQN2ruEoCuyQynoxpKaA00ojFgQ116}
         restart: unless-stopped
         ports:
             - ${PORT:-3000}:80
+
+    # video conversion server, see https://github.com/VERT-sh/vertd
+    # remove this service if you use the official instance (PUB_VERTD_URL=https://vertd.vert.sh)
+    vertd:
+        container_name: vertd
+        image: ${VERTD_IMAGE:-ghcr.io/vert-sh/vertd:latest}
+        restart: unless-stopped
+        environment:
+            # falls back to (slower) CPU encoding if no supported GPU is found
+            ALLOW_CPU_FALLBACK: ${ALLOW_CPU_FALLBACK:-true}
+            # skip GPU auto-detection: nvidia, amd, intel, apple or cpu
+            # VERTD_FORCE_GPU: cpu
+            # for Intel/AMD GPUs not at /dev/dri/renderD128
+            # VERTD_VAAPI_DEVICE_PATH: /dev/dri/renderD129
+            # MAX_UPLOAD_BYTES: 10737418240
+        ports:
+            - ${VERTD_PORT:-24153}:24153
+
+        # GPU passthrough - by default vertd runs on the CPU. uncomment ONE of the options below.
+        #
+        # Intel/AMD GPUs:
+        # devices:
+        #     - /dev/dri:/dev/dri
+        #
+        # NVIDIA GPUs (requires the NVIDIA Container Toolkit, see
+        # https://github.com/VERT-sh/vertd/blob/main/docs/DOCKER_SETUP.md#for-nvidia-users):
+        # runtime: nvidia
+        # deploy:
+        #     resources:
+        #         reservations:
+        #             devices:
+        #                 - driver: nvidia
+        #                   count: all
+        #                   capabilities: [gpu]

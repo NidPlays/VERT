@@ -18,7 +18,7 @@
 	import { ToastManager } from "$lib/util/toast.svelte";
 	import { DISABLE_ALL_EXTERNAL_REQUESTS } from "$lib/util/consts";
 	import { addDialog } from "$lib/store/DialogProvider";
-	import { PUB_PLAUSIBLE_URL } from "$env/static/public";
+	import { PUB_PLAUSIBLE_URL } from "$lib/util/env";
 
 	const { settings = $bindable() }: { settings: ISettings } = $props();
 
